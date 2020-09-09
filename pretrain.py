@@ -23,7 +23,7 @@ from _utils.would_like_to_pr import *
 
 # %%
 c = MyConfig({
-    'device': 'cuda:0',
+    'device': 'cuda:6',
     
     'base_run_name': 'vanilla', # run_name = {base_run_name}_{seed}
     'seed': 11081, # 11081 36 1188 76 1 # None/False to randomly choose seed from [0,99999]
