@@ -29,7 +29,11 @@ Results for models on the GLUE test set.
 > Note: This project is actually for my personal research. So I didn't trying to make it easy to use for all users, but trying to make it easy to read and modify.
 
 ## Install requirements
-`pip install fastai nlp transformers hugdatafast`
+`pip install fastai nlp transformers hugdatafast apache_beam six`
+`pip install torch==1.6.0+cu101 torchvision==0.7.0+cu101 -f https://download.pytorch.org/whl/torch_stable.html`
+
+## Docker Image
+`docker push alee6868/cuda_10.1_pytorch_1.6:tagname`
 
 ## Steps
 1. `python pretrain.py`
