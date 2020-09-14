@@ -1,0 +1,3 @@
+#nsml: alee6868/cuda_10.1_pytorch_1.6
+apache_beam
+six

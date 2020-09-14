@@ -46,20 +46,26 @@ class RunSteps(Callback):
     else:
       assert '{percent}' in base_name
       save_points = [ s if isinstance(s,int) else int(n_steps*s) for s in save_points ]
+      print(f"SAVE POINTS: {save_points}")
       for sp in save_points: assert sp != 1, "Are you sure you want to save after 1 steps, instead of 1.0 * num_steps ?"
       assert max(save_points) <= n_steps
     store_attr('n_steps,save_points,base_name,no_val', self)
 
   def after_batch(self):
     # fix pct_train (cuz we'll set `n_epoch` larger than we need)
+    print(f"TRAIN ITER: {self.train_iter}")
     self.learn.pct_train -= 1./(self.n_iter*self.n_epoch)
     self.learn.pct_train += 1./self.n_steps
     # when to save
     if self.train_iter in self.save_points:
       percent = (self.train_iter/self.n_steps)*100
+      print(f"SAVING>>>> percent: {percent}")
       self.learn.save(self.base_name.format(percent=f'{percent}%'))
+    else:
+      print(f"Not saving. train_iter: {self.train_iter} and save_points: {self.save_points}")
     # when to interrupt
     if self.train_iter == self.n_steps:
+      print("!!! INTERRUPT !!!")
       raise CancelFitException
 
   def after_train(self):

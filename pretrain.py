@@ -38,6 +38,7 @@ c = MyConfig({
 
     'size': 'small',
     'my_model': False, # False to use huggingface model architecture (untrained weights)
+    'name': "retrain",	
 })
 
 # only for my personal research purpose
@@ -62,7 +63,7 @@ assert c.sampling in ['fp32_gumbel', 'fp16_gumbel', 'multinomial']
 assert c.schedule in ['original_linear', 'separate_linear', 'one_cycle', 'adjusted_one_cycle']
 if not c.base_run_name: c.base_run_name = str(datetime.now(timezone(timedelta(hours=+8))))[6:-13].replace(' ','').replace(':','').replace('-','')
 if not c.seed: c.seed = random.randint(0, 99999)
-c.run_name = f'{c.base_run_name}_{c.seed}'
+c.run_name = f'{c.base_run_name}_{c.seed}_{c.size}_{c.name}'
 if c.gen_smooth_label is True: c.gen_smooth_label = 0.1
 if c.disc_smooth_label is True: c.disc_smooth_label = 0.1
 
@@ -71,7 +72,7 @@ i = ['small', 'base', 'large'].index(c.size)
 c.mask_prob = [0.15, 0.15, 0.25][i]
 c.lr = [5e-4, 2e-4, 2e-4][i]
 c.bs = [128, 256, 2048][i]
-c.steps = [10**6, 766*1000, 400*1000][i]
+c.steps = [10**6, 766*1000, 400*1000][i] # 10**6
 c.max_length = [128, 512, 512][i]
 generator_size_divisor = [4, 3, 4][i]
 disc_config = ElectraConfig.from_pretrained(f'google/electra-{c.size}-discriminator')
@@ -81,10 +82,9 @@ gen_config.hidden_size = int(disc_config.hidden_size/generator_size_divisor)
 gen_config.num_attention_heads = int(disc_config.num_attention_heads/generator_size_divisor)
 gen_config.intermediate_size = int(disc_config.intermediate_size/generator_size_divisor)
 hf_tokenizer = ElectraTokenizerFast.from_pretrained(f"google/electra-{c.size}-generator")
-
 # Path to data
 Path('./datasets', exist_ok=True)
-Path('./checkpoints/pretrain').mkdir(exist_ok=True, parents=True)
+Path(f'./checkpoints_{c.name}/pretrain').mkdir(exist_ok=True, parents=True)
 if c.size in ['small', 'base']:
   wiki_cache_dir = Path("./datasets/wikipedia/20200501.en/1.0.0")
   book_cache_dir = Path("./datasets/bookcorpus/plain_text/1.0.0")
@@ -121,7 +121,7 @@ if c.size in ['small', 'base']:
     print('load/download wiki dataset')
     wiki = nlp.load_dataset('wikipedia', '20200501.en', cache_dir='./datasets')['train']
   
-    print('creat data from wiki dataset for ELECTRA')
+    print('create data from wiki dataset for ELECTRA')
     wiki = ELECTRADataTransform(wiki, is_docs=True, text_col='text', max_length=c.max_length, hf_toker=hf_tokenizer).map(cache_file_name=str(wiki_cache_dir/f"wiki_electra_{c.max_length}.arrow"))
 
   # bookcorpus
@@ -132,7 +132,7 @@ if c.size in ['small', 'base']:
     print('load/download BookCorpus dataset')
     book = nlp.load_dataset('bookcorpus', cache_dir='./datasets')['train']
   
-    print('creat data from BookCorpus dataset for ELECTRA')
+    print('create data from BookCorpus dataset for ELECTRA')
     book = ELECTRADataTransform(book, is_docs=False, text_col='text', max_length=c.max_length, hf_toker=hf_tokenizer).map(cache_file_name=str(book_cache_dir/f"book_electra_{c.max_length}.arrow"))
 
   wb_data = HF_MergedDataset(wiki, book)
@@ -379,12 +379,12 @@ if c.schedule.endswith('linear'):
                                              total_steps=c.steps,)})
 
 
-# Learner
+# Learner from fastai - 0.0625, 0.125, 0.25, 0.5, 1.0
 dls.to(torch.device(c.device))
 learn = Learner(dls, electra_model,
                 loss_func=electra_loss_func,
                 opt_func=opt_func ,
-                path='./checkpoints',
+                path=f'./checkpoints_{c.name}',
                 model_dir='pretrain',
                 cbs=[mlm_cb,
                      RunSteps(c.steps, [0.0625, 0.125, 0.25, 0.5, 1.0], c.run_name+"_{percent}"),
