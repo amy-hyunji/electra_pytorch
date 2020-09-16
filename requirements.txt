@@ -1,3 +1,8 @@
 #nsml: alee6868/cuda_10.1_pytorch_1.6
 apache_beam
 six
+tqdm
+sklearn
+scipy
+pattern3
+nltk
