@@ -233,7 +233,13 @@ def replace_one(sen, ori_word, ori_hyper):
 	_name, _pos = get_name_pos_from_syn(elem)
 	return change_word(sen, ori_word, _name)
 
-def replace_sentence (sen, num, total_tokens, _random):
+"""
+sen: input Sentence
+num: number of words to be replaced 
+total_tokens: list of words to be used when replace randomly 
+_random: True if replace randomly, False if replace by wordnet
+"""
+def replace_sentence (sen, num, total_tokens, _random, iterNum):
 
 	tokens = word_tokenize(sen)
 	tokenList, tagDict, lemmaDict = preprocess(tokens, debug=False)
@@ -280,33 +286,36 @@ def replace_sentence (sen, num, total_tokens, _random):
 
 		if (len(_key) <= num):
 			num = len(_key)-1 
-		
-		_sampleNum = []
-		wordNum = []
-		while len(_sampleNum) != num:
-			randNum = random.randint(0, len(_key)-1)
-			if randNum not in _sampleNum:
-				_sampleNum.append(randNum)
-				wordNum.append(_key[randNum])	
-		print(f"[Before replaceable]: {wordNum}, num: {num}")
 
-		sampleNum = []
-		for idx in _sampleNum:
-			if is_replaceable(_key[idx], tagDict):
-				sampleNum.append(idx)
-		if (len(sampleNum) == 0):
-			return sen
-		if (len(sampleNum) <= num):
-			num = max(len(sampleNum)-1, 1)
-		print(f"[After replaceable]: {sampleNum}, num: {num}")
+		retSen = []
+		for _iter in range(iterNum):
+			_sampleNum = []
+			wordNum = []
+			while len(_sampleNum) != num:
+				randNum = random.randint(0, len(_key)-1)
+				if randNum not in _sampleNum:
+					_sampleNum.append(randNum)
+					wordNum.append(_key[randNum])	
+			print(f"[Before replaceable]: {wordNum}, num: {num}")
+
+			sampleNum = []
+			for idx in _sampleNum:
+				if is_replaceable(_key[idx], tagDict):
+					sampleNum.append(idx)
+			if (len(sampleNum) == 0):
+				return sen
+			if (len(sampleNum) <= num):
+				num = max(len(sampleNum)-1, 1)
+			print(f"[After replaceable]: {sampleNum}, num: {num}")
 
 #	randNum = random.randint(1, len(_key)) # choose the word to change randomly
-		for randNum in sampleNum:
-			ori_word = _key[randNum]
-			ori_hyper = hypernymDict[ori_word]
+			for randNum in sampleNum:
+				ori_word = _key[randNum]
+				ori_hyper = hypernymDict[ori_word]
 #		replace_all(sen, ori_word, ori_hyper)
-			sen = replace_one(sen, ori_word, ori_hyper)
-	return sen
+				sen = replace_one(sen, ori_word, ori_hyper)
+			retSen.append(sen)
+	return retSen 
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
